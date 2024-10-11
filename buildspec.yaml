@@ -1,28 +1,40 @@
 version: 0.2
-env:
-  variables:
-    ECR_REPO_NAME: "sonar"  # Nome do repositório ECR
-    AWS_ACCOUNT_ID: "985539772981"  # ID da conta AWS
-    AWS_REGION: "us-east-1"  # Região AWS
-    phases:
+phases:
+  install:
+    runtime-versions:
+      docker: latest
+    commands:
+      - echo Logging in to Amazon ECR...
+      - echo "Instalando dependências"
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
+      - apt-get update -y
+      - apt-get install -y curl unzip  # Se necessário para dependências específicas
   pre_build:
     commands:
-      - echo "AWS_REGION: ${AWS_REGION}"  # Verificar valor da região
-      # Build the ECR image URI
-      - export ECR_MAIN_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-      - export ECR_IMAGE_URI="${ECR_MAIN_URI}/${ECR_REPO_NAME}:${ENV}-$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-8)"
-      # Authenticate Docker with ECR using temporary credentials
-      - echo "Logging into Amazon ECR..."
-      - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_MAIN_URI}" 2>&1 | tee aws_login_output.log
-      - echo "Docker Login Command Output:"
-      - cat aws_login_output.log
-      build:
+      - echo "Fazendo login no Amazon ECR novamente"
+      - $(aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI)
+      - echo "Verificando se há imagens existentes"
+      - docker pull $ECR_REPOSITORY_URI:latest || true
+
+  build:
     commands:
-      # Build and package the project using Maven, skipping tests
-      - echo "Building the project with Maven..."
-      - mvn install -DskipTests=true
-      - mvn clean package -DskipTests=true
-      # Build the Docker image
-      - echo "Building the Docker image..."
-      - docker build -t "${ECR_REPO_NAME}:latest" .
-      - export
+      - echo "Iniciando a build do Docker"
+      - docker build -t $ECR_REPOSITORY_URI:latest .
+      - docker tag $ECR_REPOSITORY_URI:latest $ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
+
+  post_build:
+    commands:
+      - echo "Fazendo push da imagem para o ECR"
+      - docker push $ECR_REPOSITORY_URI:latest
+      - docker push $ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo "Build concluída com sucesso"
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1
+    ECR_REPOSITORY_URI: 985539772981.dkr.ecr.us-east-1.amazonaws.com/sonar
+
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: yes
