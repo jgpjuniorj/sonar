@@ -3,7 +3,6 @@ env:
   variables:
     ECR_REPO_NAME: sonar
     AWS_ACCOUNT_ID: 985539772981
-    
 phases:
   install:
       runtime-versions:
