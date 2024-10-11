@@ -9,6 +9,7 @@ phases:
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI
       - apt-get update -y
       - apt-get install -y curl unzip  # Se necessário para dependências específicas
+      - echo exporte 
   pre_build:
     commands:
       - echo "Fazendo login no Amazon ECR novamente"
