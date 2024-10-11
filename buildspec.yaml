@@ -1,9 +1,12 @@
 version: 0.2
+
 env:
   variables:
     ECR_REPO_NAME: "sonar"  # Nome do repositório ECR
     AWS_ACCOUNT_ID: "985539772981"  # ID da conta AWS
     AWS_REGION: "us-east-1"  # Região AWS
+    ENV: "dev"  # Defina o ambiente (exemplo: dev, prod)
+
 phases:
   pre_build:
     commands:
@@ -16,6 +19,7 @@ phases:
       - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_MAIN_URI}" 2>&1 | tee aws_login_output.log
       - echo "Docker Login Command Output:"
       - cat aws_login_output.log
+
   build:
     commands:
       # Build and package the project using Maven, skipping tests
@@ -25,6 +29,7 @@ phases:
       # Build the Docker image
       - echo "Building the Docker image..."
       - docker build -t "${ECR_REPO_NAME}:latest" .
+
   post_build:
     commands:
       # Tag the Docker image with the ECR image URI
@@ -36,6 +41,7 @@ phases:
       # Generate an image definition JSON file for ECS Pipeline
       - echo "Generating image definition JSON file..."
       - printf '[{"name":"%s","imageUri":"%s"}]' "${ECR_REPO_NAME}" "${ECR_IMAGE_URI}" > imageDefinitionSLayerGetAdress.json
+
 artifacts:
   base-directory: .
   files:
