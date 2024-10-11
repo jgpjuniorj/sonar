@@ -32,7 +32,7 @@ phases:
 env:
   variables:
     AWS_DEFAULT_REGION: us-east-1
-    ECR_REPOSITORY_URI: <seu-repositorio-ecr>
+    ECR_REPOSITORY_URI: 985539772981.dkr.ecr.us-east-1.amazonaws.com/sonar
 
 artifacts:
   files:
