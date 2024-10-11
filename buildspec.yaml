@@ -1,0 +1,40 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      docker: latest
+    commands:
+      - echo "Instalando dependências"
+      - apt-get update -y
+      - apt-get install -y awscli
+
+  pre_build:
+    commands:
+      - echo "Fazendo login no Amazon ECR"
+      - $(aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URI)
+      - echo "Verificando se há imagens existentes"
+      - docker pull $ECR_REPOSITORY_URI:latest || true
+
+  build:
+    commands:
+      - echo "Iniciando a build do Docker"
+      - docker build -t $ECR_REPOSITORY_URI:latest .
+      - docker tag $ECR_REPOSITORY_URI:latest $ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
+
+  post_build:
+    commands:
+      - echo "Fazendo push da imagem para o ECR"
+      - docker push $ECR_REPOSITORY_URI:latest
+      - docker push $ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo "Build concluída com sucesso"
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1
+    ECR_REPOSITORY_URI: <seu-repositorio-ecr>
+
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: yes
