@@ -20,8 +20,7 @@ phases:
   build:
     commands:
       # Build and package the project using Maven, skipping tests
-      - mvn install -DskipTests=true
-      - mvn clean package -DskipTests=true
+     
       # Build the Docker image
       - docker build -t "${ECR_REPO_NAME}:latest" .
   post_build:
