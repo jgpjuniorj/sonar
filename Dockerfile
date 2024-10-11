@@ -55,7 +55,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*;
 
 COPY entrypoint.sh ${SONARQUBE_HOME}/docker/
-RUN chmod +x ${SONARQUBE_HOME}/docker/entrypoint.sh
+RUN chmod +x /opt/sonarqube/docker/entrypoint.sh
 
 WORKDIR ${SONARQUBE_HOME}
 EXPOSE 9000
