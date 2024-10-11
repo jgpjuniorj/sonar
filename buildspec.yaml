@@ -3,34 +3,34 @@ env:
   variables:
     ECR_REPO_NAME: sonar
     AWS_ACCOUNT_ID: 985539772981
+    AWS_REGION: us-east-1  # Definir a região AWS
 phases:
   install:
-      runtime-versions:
-        java: corretto17
+    runtime-versions:
+      java: corretto17
   pre_build:
     commands:
-      # Visualizar variaveis codebuild
+      # Visualizar variáveis do CodeBuild
       - export
-      # Build the ECR image URI
+      # Construir a URI da imagem ECR
       - ECR_MAIN_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-      - ECR_IMAGE_URI="${ECR_MAIN_URI}/${ECR_REPO_NAME}:${ENV}-${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}"
-      # Authenticate Docker with ECR using temporary credentials
+      - ECR_IMAGE_URI="${ECR_MAIN_URI}/${ECR_REPO_NAME}:${CODEBUILD_RESOLVED_SOURCE_VERSION:0:8}"
+      # Autenticar o Docker com o ECR usando credenciais temporárias
       - aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_MAIN_URI}"
   build:
     commands:
-      # Build and package the project using Maven, skipping tests
-     
-      # Build the Docker image
+      # Buildar a imagem Docker
       - docker build -t "${ECR_REPO_NAME}:latest" .
   post_build:
     commands:
-      # Tag the Docker image with the ECR image URI
+      # Taggear a imagem Docker com a URI do ECR
       - docker tag "${ECR_REPO_NAME}:latest" "${ECR_IMAGE_URI}"
-      # Push the Docker image to the ECR repository
+      # Fazer o push da imagem Docker para o repositório ECR
       - docker push "${ECR_IMAGE_URI}"
-      # Generate an image definition JSON file for ECS Pipeline
-      - printf '[{"name":"%s","imageUri":"%s"}]' "${ECR_REPO_NAME}" "${ECR_IMAGE_URI}" > imageDefinitionSLayerGetAdress.json
+      # Gerar o arquivo JSON de definição de imagem para o Pipeline ECS
+      - printf '[{"name":"%s","imageUri":"%s"}]' "${ECR_REPO_NAME}" "${ECR_IMAGE_URI}" > imageDefinitionSLayerGetAddress.json
 artifacts:
   base-directory: .
   files:
-    - 'imageDefinitionSLayerGetAdress.json'
+    - 'imageDefinitionSLayerGetAddress.json'
+
